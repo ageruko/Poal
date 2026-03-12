@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>משחק פעלים – בניין הפעיל</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Heebo', sans-serif;
+  background: #f0f4ff;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 30px 16px 60px;
+  background-image:
+    radial-gradient(circle at 10% 20%, #dce8ff 0%, transparent 45%),
+    radial-gradient(circle at 90% 80%, #fff0d6 0%, transparent 45%);
+}
+
+header {
+  text-align: center;
+  margin-bottom: 20px;
+  animation: fadeDown 0.6s ease both;
+}
+
+header .tag {
+  display: inline-block;
+  background: #ffd166;
+  color: #7a4b00;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 20px;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+
+header h1 { font-size: 2rem; font-weight: 900; color: #1a2d6b; }
+header p  { color: #6677aa; margin-top: 6px; font-size: 0.92rem; }
+
+/* Context badge */
+.context-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 14px;
+  transition: background 0.3s, color 0.3s;
+}
+.ctx-school  { background: #e8f4fd; color: #1565c0; border: 1.5px solid #90caf9; }
+.ctx-soccer  { background: #e8f5e9; color: #1b5e20; border: 1.5px solid #a5d6a7; }
+.ctx-gaming  { background: #f3e5f5; color: #4a148c; border: 1.5px solid #ce93d8; }
+
+/* Progress */
+.progress-wrap { width: 100%; max-width: 580px; margin-bottom: 6px; animation: fadeDown 0.7s ease 0.1s both; }
+.progress-track { background: #dce6ff; border-radius: 20px; height: 10px; overflow: hidden; }
+.progress-fill  { height: 100%; background: linear-gradient(90deg, #4361ee, #f77f00); border-radius: 20px; transition: width 0.5s cubic-bezier(.4,0,.2,1); }
+.progress-label { display: flex; justify-content: space-between; font-size: 0.8rem; color: #8899bb; margin-top: 5px; margin-bottom: 16px; }
+
+/* Card */
+.card {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 30px 28px;
+  max-width: 580px;
+  width: 100%;
+  box-shadow: 0 6px 30px rgba(40,60,140,0.10), 0 1px 4px rgba(0,0,0,0.04);
+  animation: slideUp 0.5s ease both;
+  position: relative;
+  overflow: hidden;
+}
+.card::after { content:''; position:absolute; top:0; left:0; right:0; height:5px; background:linear-gradient(90deg,#4361ee,#f77f00); }
+
+.q-number { font-size: 0.78rem; font-weight: 700; color: #4361ee; letter-spacing: 1px; margin-bottom: 10px; }
+
+.sentence-wrap {
+  font-size: 1.28rem;
+  font-weight: 600;
+  color: #1a2d6b;
+  line-height: 2.1;
+  margin-bottom: 26px;
+  min-height: 65px;
+}
+
+.blank {
+  display: inline-block;
+  min-width: 110px;
+  border-bottom: 3px solid #4361ee;
+  padding: 0 10px 2px;
+  color: #4361ee;
+  font-weight: 700;
+  text-align: center;
+  transition: all 0.3s ease;
+  vertical-align: bottom;
+}
+.blank.correct { border-color: #06a77d; color: #06a77d; }
+.blank.wrong   { border-color: #d62839; color: #d62839; text-decoration: line-through; }
+
+mark {
+  background: #fff0cc;
+  color: #b35c00;
+  font-weight: 900;
+  border-radius: 5px;
+  padding: 1px 6px;
+}
+
+.options { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
+
+.opt {
+  background: #f4f6ff;
+  border: 2px solid #d8dff5;
+  border-radius: 14px;
+  padding: 13px 10px;
+  font-family: 'Heebo', sans-serif;
+  font-size: 1.08rem;
+  font-weight: 700;
+  color: #2c3e7a;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  text-align: center;
+}
+.opt:hover:not(:disabled) { border-color: #4361ee; background: #eef1ff; transform: translateY(-2px); box-shadow: 0 4px 14px rgba(67,97,238,0.13); }
+.opt.correct { border-color: #06a77d; background: #e6faf5; color: #06a77d; }
+.opt.wrong   { border-color: #d62839; background: #fff0f1; color: #d62839; }
+.opt:disabled { cursor: default; }
+
+.feedback {
+  margin-top: 16px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.5;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.feedback.show { opacity: 1; transform: translateY(0); }
+.feedback.ok  { background: #e6faf5; border: 1.5px solid #06a77d; color: #046950; }
+.feedback.err { background: #fff0f1; border: 1.5px solid #d62839; color: #a01020; }
+.feedback .icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 1px; }
+
+.next-btn {
+  width: 100%;
+  margin-top: 14px;
+  padding: 14px;
+  background: linear-gradient(135deg, #4361ee, #3a0ca3);
+  border: none;
+  border-radius: 14px;
+  color: #fff;
+  font-family: 'Heebo', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.25s ease;
+}
+.next-btn.visible { opacity: 1; pointer-events: all; }
+.next-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 22px rgba(67,97,238,0.3); }
+
+/* Score screen */
+#score-screen { display: none; text-align: center; animation: slideUp 0.5s ease both; }
+#score-screen.show { display: block; }
+.score-emoji  { font-size: 4rem; margin-bottom: 12px; }
+.score-title  { font-size: 1.7rem; font-weight: 900; color: #1a2d6b; margin-bottom: 8px; }
+.score-num    { font-size: 3.5rem; font-weight: 900; color: #4361ee; line-height: 1; }
+.score-out-of { font-size: 1rem; color: #8899bb; margin-bottom: 12px; }
+.stars        { display: flex; justify-content: center; gap: 6px; margin: 10px 0 18px; font-size: 1.8rem; }
+.score-msg    { font-size: 1rem; color: #445580; margin-bottom: 24px; line-height: 1.6; }
+
+.ctx-summary  { display: flex; justify-content: center; gap: 14px; margin-bottom: 22px; flex-wrap: wrap; }
+.ctx-stat     { background: #f4f6ff; border-radius: 12px; padding: 10px 18px; font-size: 0.88rem; font-weight: 700; color: #2c3e7a; text-align: center; }
+.ctx-stat .ctx-icon { font-size: 1.4rem; display: block; margin-bottom: 3px; }
+
+.restart-btn {
+  padding: 15px 40px;
+  background: linear-gradient(135deg, #f77f00, #d62828);
+  border: none;
+  border-radius: 14px;
+  color: #fff;
+  font-family: 'Heebo', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.restart-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 22px rgba(247,127,0,0.35); }
+
+@keyframes fadeDown { from { opacity:0; transform:translateY(-18px); } to { opacity:1; transform:translateY(0); } }
+@keyframes slideUp  { from { opacity:0; transform:translateY(22px);  } to { opacity:1; transform:translateY(0); } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="tag">בניין הפעיל · זמן עבר</div>
+  <h1>משחק פעלים 🎯</h1>
+  <p>בחר את הצורה הנכונה של הפועל</p>
+</header>
+
+<div class="progress-wrap">
+  <div class="progress-track"><div class="progress-fill" id="pfill" style="width:0%"></div></div>
+  <div class="progress-label">
+    <span id="plabel">שאלה 1 מתוך 20</span>
+    <span id="score-live">✅ 0</span>
+  </div>
+</div>
+
+<div id="game-card" class="card">
+  <div id="context-badge" class="context-badge"></div>
+  <div class="q-number" id="q-number"></div>
+  <div class="sentence-wrap" id="sentence"></div>
+  <div class="options" id="options"></div>
+  <div class="feedback" id="feedback"><span class="icon"></span><span id="fb-text"></span></div>
+  <button class="next-btn" id="next-btn" onclick="nextQ()">המשך ←</button>
+</div>
+
+<div id="score-screen" class="card">
+  <div class="score-emoji" id="s-emoji">🌟</div>
+  <div class="score-title">סיימת את המשחק!</div>
+  <div class="score-num" id="s-num">0</div>
+  <div class="score-out-of">מתוך 20</div>
+  <div class="stars" id="s-stars"></div>
+  <div class="ctx-summary">
+    <div class="ctx-stat"><span class="ctx-icon">🏫</span><span id="s-school">בית ספר: 0/7</span></div>
+    <div class="ctx-stat"><span class="ctx-icon">⚽</span><span id="s-soccer">כדורגל: 0/7</span></div>
+    <div class="ctx-stat"><span class="ctx-icon">🎮</span><span id="s-gaming">משחקי מחשב: 0/6</span></div>
+  </div>
+  <div class="score-msg" id="s-msg"></div>
+  <button class="restart-btn" onclick="restart()">🔄 שחק שוב</button>
+</div>
+
+<script>
+// suffix explanations for wrong answers
+const SUFFIX_HINT = {
+  "הצחיקה":  "עבור 'היא' – הסיומת היא ה-",
+  "הצחיק":   "עבור 'הוא' – אין סיומת",
+  "הצחיקו":  "עבור 'הם/הן' – הסיומת היא וּ-",
+  "הצחקתי":  "עבור 'אני' – הסיומת היא יִ-תִ",
+  "הצחקת":   "עבור 'אתה' – הסיומת היא תָּ-",
+  "הצחקתם":  "עבור 'אתם' – הסיומת היא תֶּם-",
+  "הצחקנו":  "עבור 'אנחנו' – הסיומת היא נוּ-",
+};
+
+// Generic suffix rule by guf
+function suffixHint(guf) {
+  const MAP = {
+    "אני":    "עבור 'אני' בזמן עבר – הסיומת היא תִי-",
+    "אתה":   "עבור 'אתה' בזמן עבר – הסיומת היא תָּ-",
+    "את":    "עבור 'את' בזמן עבר – הסיומת היא תְּ-",
+    "הוא":   "עבור 'הוא' בזמן עבר – אין סיומת",
+    "היא":   "עבור 'היא' בזמן עבר – הסיומת היא ה-",
+    "אנחנו": "עבור 'אנחנו' בזמן עבר – הסיומת היא נוּ-",
+    "אתם":   "עבור 'אתם' בזמן עבר – הסיומת היא תֶּם-",
+    "אתן":   "עבור 'אתן' בזמן עבר – הסיומת היא תֶּן-",
+    "הם":    "עבור 'הם' בזמן עבר – הסיומת היא וּ-",
+    "הן":    "עבור 'הן' בזמן עבר – הסיומת היא וּ-",
+  };
+  return MAP[guf] || "";
+}
+
+const QUESTIONS = [
+  // ── בית ספר ──
+  {
+    ctx:"school",
+    sentence:"המורה למתמטיקה ___ אותנו במשך כל השיעור – <mark>היא</mark> סיפרה בדיחות.",
+    guf:"היא", correct:"הצחיקה",
+    options:["הצחיקה","הצחקתי","הצחיקו","הצחקנו"],
+  },
+  {
+    ctx:"school",
+    sentence:"אתמול <mark>אני</mark> ___ את כל המשימות בחוברת העבודה.",
+    guf:"אני", correct:"השלמתי",
+    options:["השלמתי","השלים","השלמנו","השלמתם"],
+  },
+  {
+    ctx:"school",
+    sentence:"דנה ___ לי את התיק כשרצתי להביא כדור – <mark>היא</mark> עזרה לי.",
+    guf:"היא", correct:"החזיקה",
+    options:["החזיקה","החזקתי","החזיקו","החזקת"],
+  },
+  {
+    ctx:"school",
+    sentence:"<mark>אנחנו</mark> ___ את התלמידים החדשים בסיור בבית הספר.",
+    guf:"אנחנו", correct:"הדרכנו",
+    options:["הדרכנו","הדריכו","הדרכתי","הדריך"],
+  },
+  {
+    ctx:"school",
+    sentence:"החברים ___ אותי למסיבת יום ההולדת – <mark>הם</mark> שלחו הזמנה.",
+    guf:"הם", correct:"הזמינו",
+    options:["הזמינו","הזמנתי","הזמין","הזמנת"],
+  },
+  {
+    ctx:"school",
+    sentence:"המנהל ___ את הציוד החדש למעבדה – <mark>הוא</mark> עשה זאת בבוקר.",
+    guf:"הוא", correct:"הכניס",
+    options:["הכניס","הכנסתי","הכניסו","הכנסת"],
+  },
+  {
+    ctx:"school",
+    sentence:"<mark>אתן</mark> ___ להסבר של המורה ולכן הצלחתן במבחן.",
+    guf:"אתן", correct:"הקשבתן",
+    options:["הקשבתן","הקשיבו","הקשבתי","הקשיב"],
+  },
+
+  // ── כדורגל ──
+  {
+    ctx:"soccer",
+    sentence:"<mark>אתם</mark> ___ ללמוד למבחן עד שעות הערב לפני המשחק.",
+    guf:"אתם", correct:"המשכתם",
+    options:["המשכתם","המשיכו","המשכנו","המשיך"],
+  },
+  {
+    ctx:"soccer",
+    sentence:"הקבוצה שלנו שיחקה מצוין, אבל בסוף <mark>אנחנו</mark> ___ במשחק.",
+    guf:"אנחנו", correct:"הפסדנו",
+    options:["הפסדנו","הפסידו","הפסדתי","הפסיד"],
+  },
+  {
+    ctx:"soccer",
+    sentence:"המאמן ___ את השחקנים לאן לבעוט – <mark>הוא</mark> הסביר בתמונות.",
+    guf:"הוא", correct:"הדריך",
+    options:["הדריך","הדרכתי","הדריכו","הדרכנו"],
+  },
+  {
+    ctx:"soccer",
+    sentence:"השוער ___ את הכדור חזק בידיו – <mark>הוא</mark> לא שחרר אותו.",
+    guf:"הוא", correct:"החזיק",
+    options:["החזיק","החזקתי","החזיקו","החזקת"],
+  },
+  {
+    ctx:"soccer",
+    sentence:"<mark>אתה</mark> ___ את הכדור לסל בשנייה האחרונה של המשחק.",
+    guf:"אתה", correct:"הכנסת",
+    options:["הכנסת","הכניס","הכנסתי","הכניסו"],
+  },
+  {
+    ctx:"soccer",
+    sentence:"הקהל ___ מתח רב כשהשחקן ניגש לבעוט – <mark>הוא</mark> צעק בהתרגשות.",
+    guf:"הוא", correct:"הרגיש",
+    options:["הרגיש","הרגשתי","הרגישו","הרגשנו"],
+  },
+  {
+    ctx:"soccer",
+    sentence:"השחקנים ___ את החימום לפני שהמשחק התחיל – <mark>הם</mark> התכוננו היטב.",
+    guf:"הם", correct:"השלימו",
+    options:["השלימו","השלמתי","השלים","השלמנו"],
+  },
+
+  // ── משחקי מחשב ──
+  {
+    ctx:"gaming",
+    sentence:"<mark>אני</mark> ___ את כל החברים שלי לשרת ב'מיינקראפט'.",
+    guf:"אני", correct:"הזמנתי",
+    options:["הזמנתי","הזמין","הזמינו","הזמנת"],
+  },
+  {
+    ctx:"gaming",
+    sentence:"<mark>היא</mark> ___ לשחק בגרסה החדשה גם כשכבר היה מאוחר.",
+    guf:"היא", correct:"המשיכה",
+    options:["המשיכה","המשכתי","המשיכו","המשכת"],
+  },
+  {
+    ctx:"gaming",
+    sentence:"<mark>אתם</mark> ___ נקודות רבות בגלל טעות קטנה ברגע האחרון.",
+    guf:"אתם", correct:"הפסדתם",
+    options:["הפסדתם","הפסידו","הפסיד","הפסדנו"],
+  },
+  {
+    ctx:"gaming",
+    sentence:"המדריך ביוטיוב ___ אותנו איך לעבור את הבוס – <mark>הוא</mark> הסביר צעד אחר צעד.",
+    guf:"הוא", correct:"הדריך",
+    options:["הדריך","הדרכתי","הדריכו","הדרכנו"],
+  },
+  {
+    ctx:"gaming",
+    sentence:"הילדים ___ לרעשי הרקע במשחק כדי למצוא את האויב – <mark>הם</mark> שמו אוזניות.",
+    guf:"הם", correct:"הקשיבו",
+    options:["הקשיבו","הקשבתי","הקשיב","הקשבנו"],
+  },
+  {
+    ctx:"gaming",
+    sentence:"<mark>את</mark> ___ סיפוק אדיר כשסיימת את המשחק לאחר שבועות.",
+    guf:"את", correct:"הרגשת",
+    options:["הרגשת","הרגיש","הרגשתי","הרגישו"],
+  }
+];
+
+const CTX_INFO = {
+  school: { label:"בית ספר 🏫", cls:"ctx-school" },
+  soccer: { label:"כדורגל ⚽",  cls:"ctx-soccer" },
+  gaming: { label:"משחקי מחשב 🎮", cls:"ctx-gaming" }
+};
+
+let current = 0, score = 0, answered = false;
+const ctxScores = {
+  school: { got:0, total: QUESTIONS.filter(q=>q.ctx==="school").length },
+  soccer: { got:0, total: QUESTIONS.filter(q=>q.ctx==="soccer").length },
+  gaming: { got:0, total: QUESTIONS.filter(q=>q.ctx==="gaming").length }
+};
+
+function shuffle(arr) { return arr.slice().sort(() => Math.random() - 0.5); }
+
+function render() {
+  const q = QUESTIONS[current];
+  answered = false;
+
+  document.getElementById('q-number').textContent = `שאלה ${current+1} מתוך ${QUESTIONS.length}`;
+  document.getElementById('pfill').style.width = `${(current / QUESTIONS.length)*100}%`;
+  document.getElementById('plabel').textContent = `שאלה ${current+1} מתוך ${QUESTIONS.length}`;
+
+  const badge = document.getElementById('context-badge');
+  badge.textContent = CTX_INFO[q.ctx].label;
+  badge.className = 'context-badge ' + CTX_INFO[q.ctx].cls;
+
+  const parts = q.sentence.split('___');
+  document.getElementById('sentence').innerHTML =
+    parts[0] + '<span class="blank" id="blank">_______</span>' + (parts[1]||'');
+
+  const optsEl = document.getElementById('options');
+  optsEl.innerHTML = '';
+  shuffle(q.options).forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'opt';
+    btn.textContent = opt;
+    btn.onclick = () => choose(btn, opt, q);
+    optsEl.appendChild(btn);
+  });
+
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback';
+  fb.querySelector('.icon').textContent = '';
+  document.getElementById('fb-text').textContent = '';
+  document.getElementById('next-btn').className = 'next-btn';
+}
+
+function choose(btn, chosen, q) {
+  if (answered) return;
+  answered = true;
+
+  document.getElementById('blank').textContent = chosen;
+  document.querySelectorAll('.opt').forEach(b => {
+    b.disabled = true;
+    if (b.textContent === q.correct) b.classList.add('correct');
+  });
+
+  const fb = document.getElementById('feedback');
+  if (chosen === q.correct) {
+    score++;
+    ctxScores[q.ctx].got++;
+    btn.classList.add('correct');
+    document.getElementById('blank').classList.add('correct');
+    fb.className = 'feedback ok show';
+    fb.querySelector('.icon').textContent = '✅';
+    document.getElementById('fb-text').textContent = 'כל הכבוד! תשובה נכונה!';
+  } else {
+    btn.classList.add('wrong');
+    document.getElementById('blank').classList.add('wrong');
+    fb.className = 'feedback err show';
+    fb.querySelector('.icon').textContent = '❌';
+    const hint = suffixHint(q.guf);
+    document.getElementById('fb-text').innerHTML =
+      `הצורה הנכונה היא: <strong>${q.correct}</strong>` +
+      (hint ? `<br><span style="font-weight:400;font-size:0.9em">${hint}</span>` : '');
+  }
+
+  document.getElementById('score-live').textContent = `✅ ${score}`;
+  document.getElementById('next-btn').className = 'next-btn visible';
+}
+
+function nextQ() {
+  current++;
+  if (current >= QUESTIONS.length) showScore();
+  else render();
+}
+
+function showScore() {
+  document.getElementById('game-card').style.display = 'none';
+  document.getElementById('pfill').style.width = '100%';
+  document.getElementById('plabel').textContent = 'סיימת!';
+  document.getElementById('score-screen').classList.add('show');
+  document.getElementById('s-num').textContent = score;
+
+  document.getElementById('s-school').textContent = `בית ספר: ${ctxScores.school.got}/${ctxScores.school.total}`;
+  document.getElementById('s-soccer').textContent = `כדורגל: ${ctxScores.soccer.got}/${ctxScores.soccer.total}`;
+  document.getElementById('s-gaming').textContent = `משחקים: ${ctxScores.gaming.got}/${ctxScores.gaming.total}`;
+
+  const pct = score / QUESTIONS.length;
+  let emoji, msg, stars;
+  if (pct===1)        { emoji='🏆'; stars='⭐⭐⭐⭐⭐'; msg='מושלם! 20 מתוך 20 – אלוף/ת בניין הפעיל!'; }
+  else if (pct>=0.85) { emoji='🌟'; stars='⭐⭐⭐⭐'; msg='תוצאה מרשימה מאוד! עוד קצת ותגיע למאה אחוז.'; }
+  else if (pct>=0.7)  { emoji='😊'; stars='⭐⭐⭐'; msg='יפה מאוד! ממש על הדרך הנכונה.'; }
+  else if (pct>=0.5)  { emoji='💪'; stars='⭐⭐'; msg='תרגול עושה מאסטר – נסה שוב!'; }
+  else                { emoji='📚'; stars='⭐'; msg='כדאי לחזור על הנושא ולנסות שוב. אתה/את יכול/ה!'; }
+
+  document.getElementById('s-emoji').textContent = emoji;
+  document.getElementById('s-stars').textContent = stars;
+  document.getElementById('s-msg').textContent = msg;
+}
+
+function restart() {
+  current=0; score=0;
+  ctxScores.school.got=0; ctxScores.soccer.got=0; ctxScores.gaming.got=0;
+  document.getElementById('score-live').textContent='✅ 0';
+  document.getElementById('score-screen').classList.remove('show');
+  document.getElementById('game-card').style.display='block';
+  render();
+}
+
+render();
+</script>
+</body>
+</html>
